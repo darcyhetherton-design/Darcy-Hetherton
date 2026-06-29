@@ -4,10 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GRAINDESK // DARCY</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ---------- self-hosted typefaces (no external dependency) ---------- */
+  @font-face{font-family:'Space Mono';font-weight:400;font-style:normal;font-display:swap;
+    src:url('/fonts/space-mono-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Space Mono';font-weight:700;font-style:normal;font-display:swap;
+    src:url('/fonts/space-mono-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-weight:500;font-style:normal;font-display:swap;
+    src:url('/fonts/orbitron-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-weight:700;font-style:normal;font-display:swap;
+    src:url('/fonts/orbitron-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-weight:900;font-style:normal;font-display:swap;
+    src:url('/fonts/orbitron-latin-900-normal.woff2') format('woff2')}
   :root{
     /* J.A.R.V.I.S. holographic HUD palette (Stark Industries) */
     --bg:#03070D; --panel:#071521; --panel2:#0A1E2E; --line:#11425F;
@@ -23,7 +31,8 @@
       radial-gradient(900px 600px at 90% 110%, rgba(20,90,140,.14), transparent 60%),
       var(--bg);
     color:var(--text);
-    font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.45;
+    font-family:'Space Mono', ui-monospace, monospace; font-size:13px; line-height:1.5;
+    letter-spacing:.2px;
     display:flex; flex-direction:column; min-height:100vh;
     -webkit-font-smoothing:antialiased;
   }
@@ -48,12 +57,12 @@
   .clk b{color:var(--dim);font-weight:400}
   .clk .v{color:var(--text)}
   .sess{padding:1px 7px;border:1px solid var(--line);border-radius:2px;font-size:11px;font-weight:600}
-  .sess.open{color:var(--green);border-color:#1c3a2a;background:#0c1812}
-  .sess.closed{color:var(--red);border-color:#3a1c1c;background:#180c0c}
-  .sess.pause{color:var(--amber);border-color:#3a2f12;background:#181208}
+  .sess.open{color:var(--amber);border-color:var(--amber-dim);background:rgba(20,70,100,.20)}
+  .sess.closed{color:var(--dim);border-color:var(--line);background:rgba(10,30,46,.6)}
+  .sess.pause{color:var(--text);border-color:var(--line);background:rgba(10,30,46,.4)}
   .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
   .dot.live{background:var(--green);box-shadow:0 0 6px var(--green)}
-  .dot.off{background:var(--red)}
+  .dot.off{background:var(--dim)}
 
   /* ---------- command bar ---------- */
   .cmdwrap{background:#0B1012;border-bottom:1px solid var(--line);padding:8px 12px}
@@ -88,9 +97,9 @@
   .ph .code{color:var(--amber);font-weight:700;font-size:11px;letter-spacing:1px}
   .ph .ttl{color:var(--dim);font-size:11px;letter-spacing:.5px}
   .badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:2px;letter-spacing:.5px}
-  .badge.live{color:var(--green);border:1px solid #1c3a2a;background:#0c1812}
-  .badge.sample{color:var(--amber);border:1px solid #3a2f12;background:#181208}
-  .badge.off{color:var(--red);border:1px solid #3a1c1c}
+  .badge.live{color:var(--amber);border:1px solid var(--amber-dim);background:rgba(20,70,100,.18)}
+  .badge.sample{color:var(--cyan);border:1px solid var(--amber-dim);background:rgba(20,70,100,.14)}
+  .badge.off{color:var(--dim);border:1px solid var(--line)}
   .pb{padding:10px;overflow:auto;flex:1}
 
   table{width:100%;border-collapse:collapse;font-size:12px}
@@ -116,14 +125,17 @@
   .wxc .temp{font-size:24px;font-weight:600;line-height:1}
   .wxc .cond{font-size:11px;color:var(--text);margin-top:3px;min-height:14px}
   .wxc .pr{font-size:11px;color:var(--cyan);margin-top:4px}
+  .wxc .temp.wx-hot{color:var(--red)}     /* heat stress */
+  .wxc .temp.wx-cool{color:var(--green)}  /* mild / favourable */
+  .wxc .pr.wet{color:var(--green)}        /* moisture */
 
   /* COT bars */
   .cot-row{margin-bottom:12px}
   .cot-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
   .cot-head .nm{color:var(--amber);font-weight:600}
   .cot-bar{height:18px;background:#0a0f10;border:1px solid var(--line);border-radius:2px;position:relative;overflow:hidden;display:flex}
-  .cot-bar .l{background:linear-gradient(90deg,#1b6b3f,#35D07F);height:100%}
-  .cot-bar .s{background:linear-gradient(90deg,#FF5C5C,#7a2020);height:100%;margin-left:auto}
+  .cot-bar .l{background:linear-gradient(90deg,#16435f,#42D4FF);height:100%}
+  .cot-bar .s{background:linear-gradient(90deg,#39505d,#adc4d1);height:100%;margin-left:auto}
   .cot-sub{font-size:10px;color:var(--dim);margin-top:3px;display:flex;justify-content:space-between}
 
   /* calculator */
@@ -156,9 +168,9 @@
   .lst{list-style:none}
   .lst li{padding:7px 0;border-bottom:1px solid #141B1E;display:flex;gap:10px;align-items:baseline}
   .lst li:last-child{border-bottom:none}
-  .lst .tag{font-size:10px;color:#000;background:var(--amber);padding:1px 5px;border-radius:2px;white-space:nowrap;font-weight:600}
+  .lst .tag{font-size:10px;color:#03070D;background:var(--amber);padding:1px 5px;border-radius:2px;white-space:nowrap;font-weight:700}
   .lst .tag.cy{background:var(--cyan)}
-  .lst .tag.gr{background:var(--green)}
+  .lst .tag.gr{background:var(--text)}
   .lst .tx{flex:1}
   .lst .tx b{color:var(--text)}
   .lst .dt{color:var(--dim);font-size:11px;white-space:nowrap}
@@ -192,10 +204,13 @@
     padding:8px 10px;border-radius:3px;margin-bottom:12px}
 
   /* ---------- J.A.R.V.I.S. HUD glow accents ---------- */
-  .brand{text-shadow:var(--glow)}
+  .brand{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:2px;text-shadow:var(--glow)}
+  .brand .who{font-weight:500;letter-spacing:1px}
+  .ph .code{font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:1.5px;text-shadow:0 0 6px rgba(66,212,255,.45)}
+  .jv-head .ttl2 b,.help dt{font-family:'Orbitron',sans-serif;letter-spacing:1px}
+  .sess,.badge,.fn{font-family:'Orbitron',sans-serif;letter-spacing:1px;font-weight:500}
   #cmd{text-shadow:0 0 6px rgba(66,212,255,.4)}
   .cmdline .pmt{text-shadow:var(--glow)}
-  .ph .code{text-shadow:0 0 6px rgba(66,212,255,.45)}
   .fn.active{box-shadow:var(--glow)}
   .panel{box-shadow:inset 0 0 0 1px rgba(66,212,255,.04), 0 0 18px rgba(8,30,46,.5)}
   .dot.live{background:var(--amber);box-shadow:0 0 8px var(--amber)}
@@ -236,6 +251,12 @@
   .jv-chip{font-size:10px;color:var(--amber);border:1px solid var(--amber-dim);background:rgba(20,70,100,.18);
     padding:3px 8px;border-radius:12px;cursor:pointer}
   .jv-chip:hover{box-shadow:var(--glow)}
+
+  /* ---------- live AG futures chart ---------- */
+  .aglgnd{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .agl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text)}
+  .agl i{width:11px;height:3px;border-radius:2px;display:inline-block}
+  .agl b{color:var(--text);font-weight:700}
 </style>
 </head>
 <body>
@@ -429,10 +450,12 @@ async function loadWeather(){
     const wrap=card.parentElement;
     const d=rows.find(x=>x.city===b.city);
     if(d && d.ok){
+      const tcl=d.temp>=86?' wx-hot':d.temp<=73?' wx-cool':'';  /* heat stress vs mild */
+      const wet=d.precip>0?' wet':'';                            /* moisture */
       wrap.innerHTML=`<div class="city">${b.city}</div><div class="st">${b.st}</div>
-        <div class="temp">${Math.round(d.temp)}\u00b0<span style="font-size:12px;color:var(--dim)">F</span></div>
+        <div class="temp${tcl}">${Math.round(d.temp)}\u00b0<span style="font-size:12px;color:var(--dim)">F</span></div>
         <div class="cond">${d.cond} \u00b7 H${Math.round(d.hi)} L${Math.round(d.lo)}</div>
-        <div class="pr">precip ${d.precip.toFixed(2)}"</div>`;
+        <div class="pr${wet}">precip ${d.precip.toFixed(2)}"</div>`;
       live++;
     }else{
       wrap.innerHTML=`<div class="city">${b.city}</div><div class="st">${b.st}</div>
@@ -453,10 +476,10 @@ const COT_SAMPLE=[
 ];
 function renderCOT(rows,live){
   const badge=`<span class="badge ${live?'live':'sample'}" id="cot-badge">${live?'LIVE':'SAMPLE'}</span>`;
-  let html=`<div class="secnote">Managed-money net positioning (large speculators). Green = long, red = short. ${live?'Live from CFTC.':'Sample values \u2014 live CFTC feed can be blocked by the browser sandbox; the real version runs this server-side.'}</div>`;
+  let html=`<div class="secnote">Managed-money net positioning (large speculators). Blue = long, grey = short. ${live?'Live from CFTC.':'Sample values \u2014 live CFTC feed can be blocked by the browser sandbox; the real version runs this server-side.'}</div>`;
   rows.forEach(r=>{
     const tot=r.long+r.short; const lp=(r.long/tot*100); const net=r.long-r.short;
-    const ncls=net>0?'up':'down';
+    const ncls='';  /* net stays white \u2014 red/green reserved for price/weather/news */
     html+=`<div class="cot-row">
       <div class="cot-head"><span class="nm">${r.nm}</span>
         <span class="num ${ncls}">net ${net>0?'+':''}${net.toLocaleString()}</span></div>
@@ -524,8 +547,70 @@ function runCalc(){
     ${contracts===0?'<div class="secnote" style="margin-top:12px">Stop too wide for this account/risk \u2014 even 1 contract exceeds your budget. Widen account, tighten stop, or use a mini (XC/XW/XK).</div>':''}`;
 }
 
+/* ---------- LIVE AG-FUTURES CHART (blue/white lines, no libs) ---------- */
+const AG_SYMS = ["ZW","ZC","ZS","KE","ZM","ZL"];
+const AG_COL = {ZW:"#42D4FF",ZC:"#7FE7FF",ZS:"#FFFFFF",KE:"#2E8FC0",ZM:"#A9D8EE",ZL:"#5E8197"};
+let agSeries = null;     // { sym:[values...] }
+let chartTimer = null;
+function agChartView(){
+  return panel("AGCHART","agricultural futures · live · normalized %",{cls:"live",tx:"● LIVE"},'c12',
+    `<canvas id="agchart" style="width:100%;height:240px;display:block"></canvas>
+     <div class="aglgnd" id="aglgnd"></div>
+     <div class="jv-note">All six CME grains, normalized to % change so they share one axis. Sample motion until a price feed is wired (see <b>KEYS</b>); live ticks drive it once connected.</div>`);
+}
+function agInit(){
+  agSeries = {};
+  AG_SYMS.forEach(s=>{
+    const w=WATCH.find(x=>x.s===s); let v=(w?w.last:100); const arr=[];
+    for(let i=0;i<64;i++){ v=v*(1+(Math.random()-0.5)*0.0016); arr.push(v); }
+    arr[arr.length-1]=(w?w.last:v); agSeries[s]=arr;
+  });
+}
+function agTick(){
+  AG_SYMS.forEach(s=>{
+    const arr=agSeries[s]; const w=WATCH.find(x=>x.s===s); const last=arr[arr.length-1];
+    const nv=(state.live && w)? w.last : last*(1+(Math.random()-0.5)*0.0017);  /* real ticks when live */
+    arr.push(nv); if(arr.length>96) arr.shift();
+  });
+}
+function agLegend(){
+  const el=document.getElementById('aglgnd'); if(!el) return;
+  el.innerHTML=AG_SYMS.map(s=>{const w=WATCH.find(x=>x.s===s)||{s,last:0,chg:0};
+    const cl=w.chg>0?'up':w.chg<0?'down':'flat'; const a=w.chg>0?'+':'';
+    return `<span class="agl"><i style="background:${AG_COL[s]}"></i><b>${s}</b> <span class="num">${fmt(w.last)}</span> <span class="num ${cl}">${a}${fmt(w.chg)}</span></span>`;}).join('');
+}
+function drawChart(){
+  const cv=document.getElementById('agchart');
+  if(!cv){ if(chartTimer){clearInterval(chartTimer);chartTimer=null;} return; }
+  const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w||!h) return;
+  cv.width=w*dpr; cv.height=h*dpr; const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL=8,padR=52,padT=10,padB=18, X0=padL,X1=w-padR,Y0=padT,Y1=h-padB;
+  ctx.strokeStyle="rgba(66,212,255,.10)"; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=Y0+(Y1-Y0)*i/4; ctx.beginPath(); ctx.moveTo(X0,y); ctx.lineTo(X1,y); ctx.stroke();}
+  const n=agSeries[AG_SYMS[0]].length; let lo=Infinity,hi=-Infinity; const norm={};
+  AG_SYMS.forEach(s=>{const a=agSeries[s],b=a[0]; const pc=a.map(v=>(v/b-1)*100); norm[s]=pc;
+    pc.forEach(p=>{lo=Math.min(lo,p);hi=Math.max(hi,p);});});
+  if(lo===hi){lo-=1;hi+=1;} const m=(hi-lo)*0.12; lo-=m; hi+=m;
+  const yOf=p=>Y1-(p-lo)/(hi-lo)*(Y1-Y0), xOf=i=>X0+(X1-X0)*i/(n-1);
+  ctx.strokeStyle="rgba(205,231,245,.22)"; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(X0,yOf(0)); ctx.lineTo(X1,yOf(0)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font="10px 'Space Mono',monospace";
+  AG_SYMS.forEach(s=>{const pc=norm[s]; ctx.strokeStyle=AG_COL[s]; ctx.lineWidth=1.6; ctx.beginPath();
+    pc.forEach((p,i)=>{const x=xOf(i),y=yOf(p); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();
+    const ey=yOf(pc[n-1]); ctx.fillStyle=AG_COL[s];
+    ctx.beginPath(); ctx.arc(xOf(n-1),ey,2,0,7); ctx.fill();
+    ctx.fillText(s+' '+(pc[n-1]>=0?'+':'')+pc[n-1].toFixed(2)+'%', X1+5, ey+3);});
+}
+function startChart(){
+  agInit(); agLegend(); requestAnimationFrame(drawChart); loadPrices(false);
+  if(chartTimer) clearInterval(chartTimer);
+  chartTimer=setInterval(()=>{ agTick(); agLegend(); drawChart(); }, 1100);
+}
+
 /* ---------- J.A.R.V.I.S. (Claude-wired assistant) ---------- */
-const JARVIS_GREETING = "Good evening, sir. J.A.R.V.I.S. online. I have the weather, COT positioning, the position sizer and the report calendar at hand — ask me anything about the desk.";
+const JARVIS_GREETING ="Good evening, sir. J.A.R.V.I.S. online. I have the weather, COT positioning, the position sizer and the report calendar at hand — ask me anything about the desk.";
 const JARVIS_PROMPTS = [
   "Size a long ZC trade: $10k account, 1% risk, entry 421, stop 413.",
   "Managed money is net short wheat — what should I watch?",
@@ -600,10 +685,10 @@ function keysView(){
   return panel("KEYS","data feeds & cost","",'c12',`
     <div class="secnote">Weather and COT run live with no key. Live <b>grain futures prices</b> need a feed: put <b>PRICE_API_KEY</b> in your <b>.env</b> file and wire your provider in <b>server.js</b> (the <b>/api/prices</b> handler). Then WATCH flips to LIVE automatically.</div>
     <table style="margin-top:4px"><tr><th>FEED</th><th>WHAT</th><th>COST</th></tr>
-      <tr><td class="sym">Open-Meteo</td><td style="color:var(--dim)">grain belt weather</td><td class="num up">FREE</td></tr>
-      <tr><td class="sym">CFTC</td><td style="color:var(--dim)">COT positioning</td><td class="num up">FREE</td></tr>
-      <tr><td class="sym">USDA/NASS</td><td style="color:var(--dim)">WASDE, crop progress</td><td class="num up">FREE</td></tr>
-      <tr><td class="sym">FRED</td><td style="color:var(--dim)">macro (DXY, rates)</td><td class="num up">FREE</td></tr>
+      <tr><td class="sym">Open-Meteo</td><td style="color:var(--dim)">grain belt weather</td><td class="num" style="color:var(--cyan)">FREE</td></tr>
+      <tr><td class="sym">CFTC</td><td style="color:var(--dim)">COT positioning</td><td class="num" style="color:var(--cyan)">FREE</td></tr>
+      <tr><td class="sym">USDA/NASS</td><td style="color:var(--dim)">WASDE, crop progress</td><td class="num" style="color:var(--cyan)">FREE</td></tr>
+      <tr><td class="sym">FRED</td><td style="color:var(--dim)">macro (DXY, rates)</td><td class="num" style="color:var(--cyan)">FREE</td></tr>
       <tr><td class="sym">Databento</td><td style="color:var(--dim)">CME futures, EOD/real-time</td><td class="num">pay-as-you-go</td></tr>
       <tr><td class="sym">Broker API</td><td style="color:var(--dim)">your futures account feed</td><td class="num">often free w/ acct</td></tr>
     </table>
@@ -636,6 +721,7 @@ function setActive(code){
 async function render(codeRaw){
   const code=(codeRaw||'DASH').trim().toUpperCase();
   setActive(code);
+  if(chartTimer){ clearInterval(chartTimer); chartTimer=null; }  /* stop live chart when leaving JARVIS */
   switch(code){
     case '': case 'DASH': {
       view.innerHTML =
@@ -661,7 +747,7 @@ async function render(codeRaw){
     case 'CALC': view.innerHTML=calcView(); ['ca-acct','ca-risk','ca-inst','ca-entry','ca-stop','ca-tgt']
       .forEach(id=>document.getElementById(id).addEventListener('input',runCalc)); runCalc(); break;
     case 'NEWS': view.innerHTML=newsView(); loadNews(); break;
-    case 'JARVIS': case 'J': case 'AI': view.innerHTML=jarvisView(); wireJarvis(); break;
+    case 'JARVIS': case 'J': case 'AI': view.innerHTML=agChartView()+jarvisView(); startChart(); wireJarvis(); break;
     case 'NOTE': case 'NOTES': view.innerHTML=notesView(); wireNotes(); break;
     case 'KEYS': view.innerHTML=keysView(); break;
     case 'HELP': case 'H': case '?': view.innerHTML=helpView(); break;

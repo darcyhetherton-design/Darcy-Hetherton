@@ -8,9 +8,13 @@
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
+    "@fontsource/orbitron": "^5.2.8",
+    "@fontsource/space-mono": "^5.2.9",
     "express": "^4.19.2"
   }
 }
