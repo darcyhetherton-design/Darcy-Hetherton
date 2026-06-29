@@ -157,6 +157,13 @@
   .lst .tx b{color:var(--text)}
   .lst .dt{color:var(--dim);font-size:11px;white-space:nowrap}
 
+  /* news price-action bias */
+  .bias{font-size:10px;padding:1px 6px;border-radius:2px;white-space:nowrap;font-weight:600;letter-spacing:.5px}
+  .bias.bull{color:var(--green);border:1px solid #1c3a2a;background:#0c1812}
+  .bias.bear{color:var(--red);border:1px solid #3a1c1c;background:#180c0c}
+  .bias.neut{color:var(--dim);border:1px solid var(--line)}
+  .biaswhy{display:block;color:var(--dim);font-size:10px;margin-top:2px;letter-spacing:.3px}
+
   .help dt{color:var(--amber);font-weight:600;margin-top:8px}
   .help dd{color:var(--dim);margin-left:0;font-size:12px}
   .hint{color:var(--dim);font-size:11px;margin-top:10px}
@@ -575,13 +582,65 @@ function newsView(){
      <div class="ph" style="background:transparent;border:none;padding:10px 0 4px"><span class="ttl">FREE SOURCES</span></div>
      <ul class="lst">`+src.map(s=>`<li><span class="tag cy">SRC</span><span class="tx"><a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a> <span style="color:var(--dim)">\u2014 ${s[2]}</span></span></li>`).join('')+`</ul>`);
 }
+/* ---------- price-action read (keyword heuristic, not a signal) ----------
+   Grain logic: anything that SHRINKS supply or LIFTS demand is bullish for
+   price (drought, freeze, tightening stocks, strong exports / China buying,
+   crop cuts); anything that ADDS supply or SOFTENS demand is bearish
+   (good crop conditions, beneficial rain, building stocks, more acres,
+   cancellations). Reversals ("drought eases") are weighted to win. */
+const BIAS_RULES=[
+  {re:/drought\s*(conditions?\s*)?(eas\w*|improv\w*|relief|retreat|end\w*)|(eas\w*|relief|improv\w*)[^.]*drought/i, s:-3, w:"drought easing"},
+  {re:/\b(drought|dry(ness)?|too dry|dry spell|moisture deficit)\b/i, s:2, w:"dryness / drought"},
+  {re:/\b(freeze|frost|winterkill|cold snap)\b/i, s:2, w:"freeze risk"},
+  {re:/\b(heat\s?wave|heat stress|excessive heat)\b/i, s:1, w:"heat stress"},
+  {re:/stocks?\b[^.]*\b(down|fall|fell|lower|drop|tighten\w*|shrink\w*)/i, s:2, w:"stocks tightening"},
+  {re:/\b(tighter|tighten\w*)\b|\btight\b[^.]*\b(supply|carryout|stocks|balance)/i, s:2, w:"tighter balance sheet"},
+  {re:/\bchina\b[^.]*\b(buy\w*|book\w*|purchas\w*|rise|rose|surg\w*|demand)|\b(buy\w*|book\w*|purchas\w*)\b[^.]*\bchina/i, s:2, w:"China demand"},
+  {re:/\b(export|sales|bookings|demand)\b[^.]*\b(ris\w*|ros\w*|jump\w*|surg\w*|strong|robust|climb\w*|sharply)/i, s:1, w:"stronger demand"},
+  {re:/\b(crop|yield|harvest|production|output)\b[^.]*\b(cut|lower|reduc\w*|smaller|down|damag\w*|loss|shrink\w*)/i, s:2, w:"smaller crop"},
+  {re:/\bplanting\b[^.]*\b(delay\w*|behind|slow\w*)|\b(delay\w*|behind|slow\w*)[^.]*\bplanting/i, s:1, w:"planting delays"},
+  {re:/\b(flood|flooding|washout)\b/i, s:1, w:"flood damage"},
+  {re:/\b(good\/excellent|good to excellent|favorab\w*|excellent)\b|improv\w*\s*(condition|crop|rating)/i, s:-2, w:"favorable crop conditions"},
+  {re:/\bahead of (the )?(5-?year )?(average|pace|normal)\b/i, s:-1, w:"crop ahead of pace"},
+  {re:/\b(ample|abundant|plentiful|bumper|large crop)\b|record (crop|harvest|yield|production|supply)/i, s:-2, w:"ample supply"},
+  {re:/stocks?\b[^.]*\b(up|ris\w*|ros\w*|higher|grow\w*|grew|build\w*|swell\w*)|building stocks/i, s:-2, w:"stocks building"},
+  {re:/\b(more|larger|bigger|higher|increas\w*|expand\w*)\b[^.]*\b(acre\w*|area|planting\w*)/i, s:-1, w:"more acreage"},
+  {re:/\b(weak\w*|soft\w*|fall\w*|lower|declin\w*|sluggish)\b[^.]*\b(demand|export|sales)/i, s:-2, w:"weaker demand"},
+  {re:/\b(cancel\w*)\b/i, s:-2, w:"cancellations"},
+  {re:/\b(beneficial|timely|widespread)\s+(rain|rainfall|showers|moisture|precip\w*)/i, s:-2, w:"beneficial rain"},
+  {re:/\b(rain|rainfall|showers|wet weather)\b/i, s:-1, w:"rain"},
+  {re:/\b(lower|fall\w*|weak\w*)\s+prices?/i, s:-1, w:"lower prices"},
+];
+function newsBias(title){
+  let score=0; const hits=[];
+  for(const r of BIAS_RULES){ if(r.re.test(title||'')){ score+=r.s; hits.push(r); } }
+  const cls=score>0?'bull':score<0?'bear':'neut';
+  const lbl=score>0?'BULLISH':score<0?'BEARISH':'NEUTRAL';
+  let why=hits.length?'offsetting signals':'no clear price driver';
+  if(score!==0){
+    const dir=Math.sign(score);
+    const rel=hits.filter(h=>Math.sign(h.s)===dir).sort((a,b)=>Math.abs(b.s)-Math.abs(a.s));
+    if(rel[0]) why=rel[0].w;
+  }
+  return {cls,lbl,why,score};
+}
 async function loadNews(){
   const m=document.getElementById('news-mount'); if(!m) return;
   try{
     const r=await fetch('/api/news'); if(!r.ok) throw 0; const items=await r.json();
     if(!items.length) throw 0;
-    m.outerHTML=`<ul class="lst">`+items.slice(0,12).map(it=>
-      `<li><span class="tag gr">${it.src||'NEWS'}</span><span class="tx"><a href="${it.link}" target="_blank" rel="noopener">${it.title}</a></span><span class="dt">${it.date||''}</span></li>`).join('')+`</ul>`;
+    const scored=items.slice(0,12).map(it=>({...it,b:newsBias(it.title)}));
+    const bull=scored.filter(x=>x.b.cls==='bull').length;
+    const bear=scored.filter(x=>x.b.cls==='bear').length;
+    const tone=bull>bear?['bull','NET BULLISH']:bear>bull?['bear','NET BEARISH']:['neut','BALANCED'];
+    const summary=`<div class="secnote" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span><b>Price-action read</b> — each headline tagged bullish / bearish for grain prices from supply‑demand & weather keywords. Context, not a trade signal.</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><span class="bias bull">▲ ${bull} BULL</span><span class="bias bear">▼ ${bear} BEAR</span><span class="bias ${tone[0]}">${tone[1]}</span></span>
+    </div>`;
+    m.outerHTML=summary+`<ul class="lst">`+scored.map(it=>{
+      const arrow=it.b.cls==='bull'?'▲':it.b.cls==='bear'?'▼':'▪';
+      return `<li><span class="tag gr">${it.src||'NEWS'}</span><span class="tx"><a href="${it.link}" target="_blank" rel="noopener">${it.title}</a><span class="biaswhy">price read: ${it.b.why}</span></span><span class="bias ${it.b.cls}">${arrow} ${it.b.lbl}</span><span class="dt">${it.date||''}</span></li>`;
+    }).join('')+`</ul>`;
     const p=[...document.querySelectorAll('.panel')].find(x=>x.querySelector('.code')?.textContent==='NEWS');
     const bdg=p&&p.querySelector('.badge'); if(bdg){bdg.className="badge live";bdg.textContent="LIVE";}
   }catch(e){
