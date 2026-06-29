@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAINDESK // DARCY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080B0C; --panel:#0F1416; --panel2:#131A1D; --line:#1E2A2E;
+    --amber:#FFB000; --amber-dim:#7A5A12; --green:#35D07F; --red:#FF5C5C;
+    --text:#C9D4D6; --dim:#5A6A6E; --cyan:#38BDD9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.45;
+    display:flex; flex-direction:column; min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--amber);color:#000}
+  a{color:var(--cyan);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:relative; background:#0A0F10; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; padding:7px 12px; flex-wrap:wrap;
+    overflow:hidden;
+  }
+  .topbar::after{ /* faint scanlines, restraint */
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+    background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.25) 2px 3px);
+  }
+  .brand{font-weight:700;color:var(--amber);letter-spacing:.5px;white-space:nowrap;z-index:1}
+  .brand .who{color:var(--dim);font-weight:400}
+  .clocks{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap;z-index:1}
+  .clk{white-space:nowrap}
+  .clk b{color:var(--dim);font-weight:400}
+  .clk .v{color:var(--text)}
+  .sess{padding:1px 7px;border:1px solid var(--line);border-radius:2px;font-size:11px;font-weight:600}
+  .sess.open{color:var(--green);border-color:#1c3a2a;background:#0c1812}
+  .sess.closed{color:var(--red);border-color:#3a1c1c;background:#180c0c}
+  .sess.pause{color:var(--amber);border-color:#3a2f12;background:#181208}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+  .dot.live{background:var(--green);box-shadow:0 0 6px var(--green)}
+  .dot.off{background:var(--red)}
+
+  /* ---------- command bar ---------- */
+  .cmdwrap{background:#0B1012;border-bottom:1px solid var(--line);padding:8px 12px}
+  .cmdline{display:flex;align-items:center;gap:8px}
+  .cmdline .pmt{color:var(--amber);font-weight:700;user-select:none}
+  #cmd{
+    flex:1;background:transparent;border:none;outline:none;color:var(--amber);
+    font-family:inherit;font-size:14px;font-weight:500;caret-color:var(--amber);
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  #cmd::placeholder{color:var(--amber-dim);text-transform:none;letter-spacing:0}
+  .fnrow{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .fn{
+    background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+    padding:3px 9px;border-radius:2px;cursor:pointer;font-family:inherit;font-size:11px;
+    letter-spacing:.5px;transition:.12s;
+  }
+  .fn:hover{color:var(--amber);border-color:var(--amber-dim)}
+  .fn.active{color:#000;background:var(--amber);border-color:var(--amber);font-weight:600}
+
+  /* ---------- main ---------- */
+  main{flex:1;padding:12px;overflow:auto}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:3px;
+    display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  }
+  .ph{
+    display:flex;align-items:center;gap:8px;padding:6px 10px;
+    border-bottom:1px solid var(--line);background:var(--panel2);
+  }
+  .ph .code{color:var(--amber);font-weight:700;font-size:11px;letter-spacing:1px}
+  .ph .ttl{color:var(--dim);font-size:11px;letter-spacing:.5px}
+  .badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:2px;letter-spacing:.5px}
+  .badge.live{color:var(--green);border:1px solid #1c3a2a;background:#0c1812}
+  .badge.sample{color:var(--amber);border:1px solid #3a2f12;background:#181208}
+  .badge.off{color:var(--red);border:1px solid #3a1c1c}
+  .pb{padding:10px;overflow:auto;flex:1}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--dim);font-weight:500;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.5px}
+  th:first-child{text-align:left}
+  td{padding:5px 6px;text-align:right;border-bottom:1px solid #141B1E}
+  td:first-child{text-align:left;color:var(--text)}
+  tr:last-child td{border-bottom:none}
+  .sym{color:var(--amber);font-weight:600}
+  .up{color:var(--green)}.down{color:var(--red)}.flat{color:var(--dim)}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* col spans */
+  .c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}
+  .c5{grid-column:span 5}.c4{grid-column:span 4}.c7{grid-column:span 7}
+  @media(max-width:880px){.grid>*{grid-column:span 12 !important}}
+
+  /* weather cards */
+  .wx{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .wxc{border:1px solid var(--line);border-radius:3px;padding:10px;background:var(--panel2)}
+  .wxc .city{color:var(--amber);font-weight:600;font-size:12px}
+  .wxc .st{color:var(--dim);font-size:10px;margin-bottom:6px}
+  .wxc .temp{font-size:24px;font-weight:600;line-height:1}
+  .wxc .cond{font-size:11px;color:var(--text);margin-top:3px;min-height:14px}
+  .wxc .pr{font-size:11px;color:var(--cyan);margin-top:4px}
+
+  /* COT bars */
+  .cot-row{margin-bottom:12px}
+  .cot-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .cot-head .nm{color:var(--amber);font-weight:600}
+  .cot-bar{height:18px;background:#0a0f10;border:1px solid var(--line);border-radius:2px;position:relative;overflow:hidden;display:flex}
+  .cot-bar .l{background:linear-gradient(90deg,#1b6b3f,#35D07F);height:100%}
+  .cot-bar .s{background:linear-gradient(90deg,#FF5C5C,#7a2020);height:100%;margin-left:auto}
+  .cot-sub{font-size:10px;color:var(--dim);margin-top:3px;display:flex;justify-content:space-between}
+
+  /* calculator */
+  .calc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.calc{grid-template-columns:1fr}}
+  .field{margin-bottom:9px}
+  .field label{display:block;font-size:10px;color:var(--dim);letter-spacing:.5px;margin-bottom:3px}
+  .field input,.field select{
+    width:100%;background:#0a0f10;border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:13px;padding:6px 8px;border-radius:2px;outline:none;
+  }
+  .field input:focus,.field select:focus{border-color:var(--amber-dim)}
+  .out{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:12px}
+  .out .big{font-size:30px;font-weight:700;color:var(--amber);line-height:1}
+  .out .lbl{font-size:10px;color:var(--dim);letter-spacing:.5px}
+  .out .ln{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #141B1E;font-size:12px}
+  .out .ln:last-child{border-bottom:none}
+  .out .ln span:last-child{color:var(--text);font-weight:600}
+  .spec{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6}
+  .spec b{color:var(--cyan);font-weight:500}
+
+  /* notes */
+  #notes{width:100%;min-height:240px;background:#0a0f10;border:1px solid var(--line);
+    color:var(--text);font-family:inherit;font-size:13px;padding:10px;border-radius:3px;
+    outline:none;resize:vertical;line-height:1.6}
+  #notes:focus{border-color:var(--amber-dim)}
+  .savenote{font-size:10px;color:var(--dim);margin-top:6px}
+
+  /* generic list */
+  .lst{list-style:none}
+  .lst li{padding:7px 0;border-bottom:1px solid #141B1E;display:flex;gap:10px;align-items:baseline}
+  .lst li:last-child{border-bottom:none}
+  .lst .tag{font-size:10px;color:#000;background:var(--amber);padding:1px 5px;border-radius:2px;white-space:nowrap;font-weight:600}
+  .lst .tag.cy{background:var(--cyan)}
+  .lst .tag.gr{background:var(--green)}
+  .lst .tx{flex:1}
+  .lst .tx b{color:var(--text)}
+  .lst .dt{color:var(--dim);font-size:11px;white-space:nowrap}
+
+  .help dt{color:var(--amber);font-weight:600;margin-top:8px}
+  .help dd{color:var(--dim);margin-left:0;font-size:12px}
+  .hint{color:var(--dim);font-size:11px;margin-top:10px}
+  .kbd{border:1px solid var(--line);border-radius:2px;padding:0 4px;color:var(--text);font-size:11px}
+
+  .btn{background:var(--panel2);border:1px solid var(--amber-dim);color:var(--amber);
+    padding:6px 12px;border-radius:2px;cursor:pointer;font-family:inherit;font-size:12px}
+  .btn:hover{background:var(--amber);color:#000}
+
+  /* ticker tape */
+  .tape{border-top:1px solid var(--line);background:#0A0F10;overflow:hidden;white-space:nowrap;padding:6px 0}
+  .tape-inner{display:inline-block;padding-left:100%;animation:scroll 38s linear infinite}
+  .tape-inner span{margin:0 22px;font-size:12px}
+  .tape b{color:var(--amber)}
+  @keyframes scroll{to{transform:translateX(-100%)}}
+  @media(prefers-reduced-motion:reduce){.tape-inner{animation:none;padding-left:0}}
+
+  .empty{color:var(--dim);text-align:center;padding:30px;font-size:12px}
+  .secnote{font-size:11px;color:var(--amber);background:#181208;border:1px solid #3a2f12;
+    padding:8px 10px;border-radius:3px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">GRAINDESK <span class="who">// DARCY</span></div>
+  <div class="clocks">
+    <span class="clk"><b>BNE</b> <span class="v" id="clk-bne">--:--</span></span>
+    <span class="clk"><b>CHI</b> <span class="v" id="clk-chi">--:--</span></span>
+    <span class="sess closed" id="sess">CBOT --</span>
+    <span class="clk"><span class="dot off" id="conn"></span><span class="v" id="conn-tx">init</span></span>
+  </div>
+</div>
+
+<div class="cmdwrap">
+  <div class="cmdline">
+    <span class="pmt">&gt;</span>
+    <input id="cmd" autocomplete="off" spellcheck="false" placeholder="type a function code and hit enter — try HELP, WTHR, COT, CALC">
+  </div>
+  <div class="fnrow" id="fnrow"></div>
+</div>
+
+<main><div id="view" class="grid"></div></main>
+
+<div class="tape"><div class="tape-inner" id="tape"></div></div>
+
+<script>
+/* ============================================================
+   GRAINDESK — personal grain-futures terminal
+   Live: weather (Open-Meteo). Attempted-live: COT (CFTC).
+   Specs/seasonality/reports: built-in domain reference.
+   ============================================================ */
+
+/* ---------- contract specs (correct CME values) ---------- */
+const SPECS = {
+  ZW:{name:"Chicago Wheat", bu:5000, tick:0.25, tickVal:12.50, ptVal:50, unit:"\u00a2/bu"},
+  ZC:{name:"Corn",          bu:5000, tick:0.25, tickVal:12.50, ptVal:50, unit:"\u00a2/bu"},
+  ZS:{name:"Soybeans",      bu:5000, tick:0.25, tickVal:12.50, ptVal:50, unit:"\u00a2/bu"},
+  XW:{name:"Mini Wheat",    bu:1000, tick:0.125,tickVal:1.25,  ptVal:10, unit:"\u00a2/bu"},
+  XC:{name:"Mini Corn",     bu:1000, tick:0.125,tickVal:1.25,  ptVal:10, unit:"\u00a2/bu"},
+  XK:{name:"Mini Soybeans", bu:1000, tick:0.125,tickVal:1.25,  ptVal:10, unit:"\u00a2/bu"},
+};
+
+/* ---------- sample watchlist (until you connect a price key) ---------- */
+const WATCH = [
+  {s:"ZW",  d:"Wheat front",   last:548.25, chg:-3.50},
+  {s:"ZC",  d:"Corn front",    last:421.00, chg:+2.25},
+  {s:"ZS",  d:"Soybeans front",last:1048.75,chg:+6.50},
+  {s:"KE",  d:"KC HRW Wheat",  last:561.50, chg:-2.75},
+  {s:"ZM",  d:"Soybean Meal",  last:312.40, chg:+1.80},
+  {s:"ZL",  d:"Bean Oil",      last:47.62,  chg:-0.31},
+];
+
+/* ---------- grain belt (Open-Meteo, free, no key) ---------- */
+const BELT = [
+  {city:"Des Moines", st:"IA \u00b7 corn/soy", lat:41.59, lon:-93.62},
+  {city:"Champaign",  st:"IL \u00b7 corn/soy", lat:40.12, lon:-88.24},
+  {city:"Omaha",      st:"NE \u00b7 corn",     lat:41.26, lon:-95.93},
+  {city:"Wichita",    st:"KS \u00b7 HRW wheat",lat:37.69, lon:-97.34},
+  {city:"Fargo",      st:"ND \u00b7 spring wht",lat:46.88,lon:-96.79},
+];
+const WMO = {0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Rime fog",
+  51:"Lt drizzle",53:"Drizzle",55:"Hvy drizzle",61:"Lt rain",63:"Rain",65:"Hvy rain",
+  66:"Frz rain",67:"Frz rain",71:"Lt snow",73:"Snow",75:"Hvy snow",80:"Showers",
+  81:"Showers",82:"Hvy showers",95:"Thunderstorm",96:"Storm+hail",99:"Storm+hail"};
+
+/* ---------- seasonality reference (tendencies, not guarantees) ---------- */
+const SEAS = [
+  {c:"CORN (ZC)", t:"Feb\u2013Jun firmness on planting/weather risk; classic weakness into Sep\u2013Oct harvest pressure. Watch the 'weather premium' build & bleed."},
+  {c:"SOYBEANS (ZS)", t:"Often strong Feb\u2013Jun on S.American + US planting; Jul weather is decisive. Harvest lows tend Sep\u2013Oct. Highly sensitive to China demand & meal/oil spread."},
+  {c:"WHEAT (ZW)", t:"N.Hemisphere harvest (Jun\u2013Jul) often caps price = seasonal low tendency. Winterkill scares Dec\u2013Feb. Most weather/geopolitics driven of the three."},
+];
+
+/* ---------- USDA / report reference ---------- */
+const REPORTS = [
+  {tag:"MAJOR", cls:"", t:"<b>Acreage</b> + <b>Grain Stocks</b> (quarterly)", d:"~Jun 30, 11:00 CT", n:"Acreage sets planted-area baseline; Stocks = surprise engine. Both are top-tier movers."},
+  {tag:"WASDE", cls:"cy", t:"<b>WASDE</b> world ag supply/demand", d:"Monthly ~9\u201312th, 11:00 CT", n:"The headline balance-sheet update. Ending-stocks vs trade estimate drives the gap move."},
+  {tag:"WEEKLY",cls:"gr", t:"<b>Crop Progress</b> (in season)", d:"Mon 15:00 CT", n:"Planting %, condition (good/excellent). Drives weekly tone Apr\u2013Nov."},
+  {tag:"WEEKLY",cls:"gr", t:"<b>Export Sales</b>", d:"Thu 07:30 CT", n:"Net new sales by destination. China line is the one to watch for beans."},
+  {tag:"QTLY",  cls:"cy", t:"<b>Prospective Plantings</b>", d:"~Mar 31", n:"First read on intended acres. Big positioning event into spring."},
+];
+
+/* ---------- function codes ---------- */
+const FNS = [
+  ["DASH","overview"],["WATCH","prices"],["COT","positioning"],["WTHR","grain belt wx"],
+  ["SEAS","seasonality"],["WASDE","report calendar"],["CALC","position sizer"],
+  ["NEWS","sources"],["NOTE","scratchpad"],["KEYS","data feeds"],["HELP","commands"]
+];
+
+/* ---------- state ---------- */
+let state = { live:false, notesSaved:"", priceKey:"" };
+let cmdHist = []; let histIdx = -1;
+
+/* ---------- storage (persists to backend JSON file) ---------- */
+async function sget(k){ try{ const r=await fetch('/api/kv?key='+encodeURIComponent(k)); if(!r.ok)return null; const j=await r.json(); return j.value??null; }catch(e){ return null; } }
+async function sset(k,v){ try{ await fetch('/api/kv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v})}); }catch(e){} }
+
+/* ============================================================
+   CLOCKS + SESSION
+   ============================================================ */
+function fmtTime(tz){
+  return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',
+    timeZone:tz,hour12:false}).format(new Date());
+}
+function chiParts(){
+  const p = new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',weekday:'short',
+    hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  const o={}; p.forEach(x=>o[x.type]=x.value);
+  return {wd:o.weekday, h:+o.hour, m:+o.minute};
+}
+/* CME Globex grains (ZC/ZW/ZS) approx, electronic:
+   Sun 19:00 -> Fri 13:20 CT, daily pause 07:45-08:30, close-gap 13:20-19:00 */
+function sessionStatus(){
+  const {wd,h,m}=chiParts(); const t=h*60+m;
+  const open=19*60, pauseA=7*60+45, pauseB=8*60+30, dayClose=13*60+20;
+  if(wd==="Sat") return ["CBOT CLOSED","closed"];
+  if(wd==="Sun") return t>=open ? ["CBOT OPEN","open"] : ["CBOT CLOSED","closed"];
+  if(wd==="Fri" && t>=dayClose && t<open) return ["CBOT CLOSED","closed"];
+  if(t>=pauseA && t<pauseB) return ["CBOT PAUSE","pause"];
+  if(t>=dayClose && t<open) return ["CBOT BREAK","pause"];
+  return ["CBOT OPEN","open"];
+}
+function tickClocks(){
+  document.getElementById('clk-bne').textContent=fmtTime('Australia/Brisbane');
+  document.getElementById('clk-chi').textContent=fmtTime('America/Chicago');
+  const [tx,cls]=sessionStatus(); const el=document.getElementById('sess');
+  el.textContent=tx; el.className="sess "+cls;
+}
+setInterval(tickClocks,1000); tickClocks();
+
+function setConn(live){
+  state.live=live;
+  document.getElementById('conn').className="dot "+(live?"live":"off");
+  document.getElementById('conn-tx').textContent=live?"live feed":"offline";
+}
+
+/* ============================================================
+   VIEW HELPERS
+   ============================================================ */
+const view=document.getElementById('view');
+function panel(code,ttl,badge,span,body){
+  const b = badge ? `<span class="badge ${badge.cls}">${badge.tx}</span>` : "";
+  return `<section class="panel ${span}">
+    <div class="ph"><span class="code">${code}</span><span class="ttl">${ttl}</span>${b}</div>
+    <div class="pb">${body}</div></section>`;
+}
+function fmt(n,d=2){return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function chgCell(c){const cl=c>0?'up':c<0?'down':'flat';const a=c>0?'+':'';return `<td class="num ${cl}">${a}${fmt(c)}</td>`;}
+
+function watchTable(full){
+  let r=`<table id="watch-tbl"><tr><th>SYM</th><th>DESC</th><th>LAST</th><th>CHG</th>${full?'<th>TICK $</th>':''}</tr>`;
+  WATCH.forEach(w=>{
+    const spec=SPECS[w.s];
+    r+=`<tr><td class="sym">${w.s}</td><td style="color:var(--dim)">${w.d}</td>
+        <td class="num">${fmt(w.last)}</td>${chgCell(w.chg)}
+        ${full?`<td class="num" style="color:var(--dim)">${spec?'$'+spec.tickVal.toFixed(2):'\u2014'}</td>`:''}</tr>`;
+  });
+  return r+"</table>";
+}
+async function loadPrices(full){
+  try{
+    const r=await fetch('/api/prices'); if(!r.ok) throw 0; const j=await r.json();
+    if(j.source==='live' && Array.isArray(j.rows)){
+      j.rows.forEach(p=>{const w=WATCH.find(x=>x.s===p.s); if(w){w.last=p.last;w.chg=p.chg;}});
+      const tbl=document.getElementById('watch-tbl');
+      if(tbl){ const fresh=document.createElement('div'); fresh.innerHTML=watchTable(full);
+        tbl.replaceWith(fresh.firstChild); }
+      // flip badge on the WATCH panel
+      const p=[...document.querySelectorAll('.panel')].find(x=>x.querySelector('.code')?.textContent==='WATCH');
+      const bdg=p&&p.querySelector('.badge'); if(bdg){bdg.className="badge live";bdg.textContent="LIVE";}
+      buildTape();
+    }
+  }catch(e){ /* keep sample */ }
+}
+
+/* ---------- WEATHER ---------- */
+function wxLoading(){return `<div class="wx">`+BELT.map(b=>
+  `<div class="wxc"><div class="city">${b.city}</div><div class="st">${b.st}</div>
+   <div class="temp" id="wx-${b.city.replace(/\s/g,'')}">\u2026</div>
+   <div class="cond">loading</div></div>`).join('')+`</div>`;}
+
+async function loadWeather(){
+  let live=0, rows=[];
+  try{
+    const r=await fetch('/api/weather'); if(!r.ok) throw 0; rows=await r.json();
+  }catch(e){ rows=[]; }
+  for(const b of BELT){
+    const id=b.city.replace(/\s/g,'');
+    const card=document.getElementById('wx-'+id); if(!card) continue;
+    const wrap=card.parentElement;
+    const d=rows.find(x=>x.city===b.city);
+    if(d && d.ok){
+      wrap.innerHTML=`<div class="city">${b.city}</div><div class="st">${b.st}</div>
+        <div class="temp">${Math.round(d.temp)}\u00b0<span style="font-size:12px;color:var(--dim)">F</span></div>
+        <div class="cond">${d.cond} \u00b7 H${Math.round(d.hi)} L${Math.round(d.lo)}</div>
+        <div class="pr">precip ${d.precip.toFixed(2)}"</div>`;
+      live++;
+    }else{
+      wrap.innerHTML=`<div class="city">${b.city}</div><div class="st">${b.st}</div>
+        <div class="temp" style="color:var(--red);font-size:14px">offline</div>
+        <div class="cond">feed unreachable</div>`;
+    }
+  }
+  setConn(live>0);
+  const badge=document.getElementById('wx-badge');
+  if(badge){badge.className="badge "+(live>0?"live":"off");badge.textContent=live>0?"LIVE":"OFFLINE";}
+}
+
+/* ---------- COT (attempt CFTC live, fallback sample) ---------- */
+const COT_SAMPLE=[
+  {nm:"CORN",     long:412000, short:188000},
+  {nm:"WHEAT",    long:104000, short:142000},
+  {nm:"SOYBEANS", long:198000, short:121000},
+];
+function renderCOT(rows,live){
+  const badge=`<span class="badge ${live?'live':'sample'}" id="cot-badge">${live?'LIVE':'SAMPLE'}</span>`;
+  let html=`<div class="secnote">Managed-money net positioning (large speculators). Green = long, red = short. ${live?'Live from CFTC.':'Sample values \u2014 live CFTC feed can be blocked by the browser sandbox; the real version runs this server-side.'}</div>`;
+  rows.forEach(r=>{
+    const tot=r.long+r.short; const lp=(r.long/tot*100); const net=r.long-r.short;
+    const ncls=net>0?'up':'down';
+    html+=`<div class="cot-row">
+      <div class="cot-head"><span class="nm">${r.nm}</span>
+        <span class="num ${ncls}">net ${net>0?'+':''}${net.toLocaleString()}</span></div>
+      <div class="cot-bar"><div class="l" style="width:${lp.toFixed(1)}%"></div><div class="s" style="width:${(100-lp).toFixed(1)}%"></div></div>
+      <div class="cot-sub"><span>long ${r.long.toLocaleString()}</span><span>short ${r.short.toLocaleString()}</span></div>
+    </div>`;
+  });
+  return {html,badge};
+}
+async function tryCOTLive(){
+  try{
+    const r=await fetch('/api/cot'); if(!r.ok) throw 0; const j=await r.json();
+    if(j && j.length===3) return j;
+    throw 0;
+  }catch(e){ return null; }
+}
+
+/* ---------- CALCULATOR ---------- */
+function calcView(){
+  return panel("CALC","position sizer & risk","",'c12',`
+    <div class="calc">
+      <div>
+        <div class="field"><label>ACCOUNT SIZE ($)</label><input id="ca-acct" type="number" value="5000"></div>
+        <div class="field"><label>RISK PER TRADE (%)</label><input id="ca-risk" type="number" value="1" step="0.25"></div>
+        <div class="field"><label>INSTRUMENT</label><select id="ca-inst">
+          ${Object.keys(SPECS).map(k=>`<option value="${k}">${k} \u2014 ${SPECS[k].name}</option>`).join('')}
+        </select></div>
+        <div class="field"><label>ENTRY (\u00a2/bu, decimal e.g. 421.50)</label><input id="ca-entry" type="number" value="421.00" step="0.25"></div>
+        <div class="field"><label>STOP (\u00a2/bu)</label><input id="ca-stop" type="number" value="413.00" step="0.25"></div>
+        <div class="field"><label>TARGET (\u00a2/bu, optional)</label><input id="ca-tgt" type="number" value="437.00" step="0.25"></div>
+        <div class="spec" id="ca-spec"></div>
+      </div>
+      <div class="out" id="ca-out"></div>
+    </div>`);
+}
+function runCalc(){
+  const acct=+document.getElementById('ca-acct').value||0;
+  const riskP=+document.getElementById('ca-risk').value||0;
+  const inst=document.getElementById('ca-inst').value;
+  const entry=+document.getElementById('ca-entry').value||0;
+  const stop=+document.getElementById('ca-stop').value||0;
+  const tgt=+document.getElementById('ca-tgt').value||0;
+  const sp=SPECS[inst];
+  const stopC=Math.abs(entry-stop);                 // cents at risk
+  const riskPerCon=stopC*sp.ptVal;                  // $ per contract
+  const dollarRisk=acct*riskP/100;
+  const contracts=riskPerCon>0?Math.floor(dollarRisk/riskPerCon):0;
+  const totRisk=contracts*riskPerCon;
+  const dir=entry<=stop?-1:1;                        // long if stop below entry
+  let rr="\u2014", rewardC=0, reward=0;
+  if(tgt>0){ rewardC=Math.abs(tgt-entry); reward=rewardC*sp.ptVal*contracts; rr=stopC>0?(rewardC/stopC).toFixed(2)+" : 1":"\u2014"; }
+  document.getElementById('ca-spec').innerHTML=
+    `<b>${sp.name}</b> \u00b7 ${sp.bu.toLocaleString()} bu \u00b7 tick ${sp.tick}\u00a2 = $${sp.tickVal.toFixed(2)} \u00b7 1.00\u00a2 move = $${sp.ptVal}/contract`;
+  document.getElementById('ca-out').innerHTML=`
+    <div class="lbl">CONTRACTS TO TRADE</div>
+    <div class="big">${contracts}</div>
+    <div style="margin-top:12px">
+      <div class="ln"><span>Direction</span><span>${dir>0?'LONG':'SHORT'}</span></div>
+      <div class="ln"><span>Stop distance</span><span>${stopC.toFixed(2)}\u00a2 ($${(stopC*sp.ptVal).toFixed(0)}/con)</span></div>
+      <div class="ln"><span>$ risk budget (${riskP}%)</span><span>$${dollarRisk.toFixed(0)}</span></div>
+      <div class="ln"><span>Actual $ at risk</span><span>$${totRisk.toFixed(0)}</span></div>
+      <div class="ln"><span>Reward (to target)</span><span>${tgt>0?'$'+reward.toFixed(0):'\u2014'}</span></div>
+      <div class="ln"><span>Risk : Reward</span><span>${rr}</span></div>
+    </div>
+    ${contracts===0?'<div class="secnote" style="margin-top:12px">Stop too wide for this account/risk \u2014 even 1 contract exceeds your budget. Widen account, tighten stop, or use a mini (XC/XW/XK).</div>':''}`;
+}
+
+/* ---------- KEYS ---------- */
+function keysView(){
+  return panel("KEYS","data feeds & cost","",'c12',`
+    <div class="secnote">Weather and COT run live with no key. Live <b>grain futures prices</b> need a feed: put <b>PRICE_API_KEY</b> in your <b>.env</b> file and wire your provider in <b>server.js</b> (the <b>/api/prices</b> handler). Then WATCH flips to LIVE automatically.</div>
+    <table style="margin-top:4px"><tr><th>FEED</th><th>WHAT</th><th>COST</th></tr>
+      <tr><td class="sym">Open-Meteo</td><td style="color:var(--dim)">grain belt weather</td><td class="num up">FREE</td></tr>
+      <tr><td class="sym">CFTC</td><td style="color:var(--dim)">COT positioning</td><td class="num up">FREE</td></tr>
+      <tr><td class="sym">USDA/NASS</td><td style="color:var(--dim)">WASDE, crop progress</td><td class="num up">FREE</td></tr>
+      <tr><td class="sym">FRED</td><td style="color:var(--dim)">macro (DXY, rates)</td><td class="num up">FREE</td></tr>
+      <tr><td class="sym">Databento</td><td style="color:var(--dim)">CME futures, EOD/real-time</td><td class="num">pay-as-you-go</td></tr>
+      <tr><td class="sym">Broker API</td><td style="color:var(--dim)">your futures account feed</td><td class="num">often free w/ acct</td></tr>
+    </table>
+    <div class="hint">The backend keeps your key server-side \u2014 it never ships to the browser. That's the whole point of running it this way.</div>`);
+}
+
+/* ---------- NOTES ---------- */
+function notesView(){
+  return panel("NOTE","trade journal / scratchpad","",'c12',`
+    <textarea id="notes" placeholder="Bias, levels, what you're watching today...">${state.notesSaved||''}</textarea>
+    <div class="savenote" id="nsave">saved automatically to this terminal</div>`);
+}
+function wireNotes(){
+  const t=document.getElementById('notes'); if(!t) return;
+  let tmr;
+  t.addEventListener('input',()=>{
+    clearTimeout(tmr);
+    document.getElementById('nsave').textContent="saving...";
+    tmr=setTimeout(async()=>{ state.notesSaved=t.value; await sset('notes',t.value);
+      document.getElementById('nsave').textContent="saved "+new Date().toLocaleTimeString(); },500);
+  });
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+function setActive(code){
+  document.querySelectorAll('.fn').forEach(f=>f.classList.toggle('active',f.dataset.c===code));
+}
+async function render(codeRaw){
+  const code=(codeRaw||'DASH').trim().toUpperCase();
+  setActive(code);
+  switch(code){
+    case '': case 'DASH': {
+      view.innerHTML =
+        panel("WATCH","grain board",{cls:"sample",tx:"SAMPLE"},'c5',watchTable(false))+
+        panel("WTHR","grain belt \u00b7 live wx",{cls:"off",tx:"\u2026"},'c7',
+          `<span id="wx-badge" style="display:none"></span>`+wxLoading())+
+        panel("COT","managed money","",'c6',`<div id="cot-mount" class="empty">loading positioning\u2026</div>`)+
+        panel("WASDE","next reports","",'c6',reportListMini());
+      // re-inject wx badge into header
+      mountWxBadge(); loadWeather(); mountCOT(); loadPrices(false);
+      break;
+    }
+    case 'WATCH': view.innerHTML=panel("WATCH","grain board \u00b7 prices",{cls:"sample",tx:"SAMPLE"},'c12',
+      watchTable(true)+`<div class="hint">Connect a feed in <span class="kbd">KEYS</span> (PRICE_API_KEY in .env). Showing sample until a live source responds.</div>`); loadPrices(true); break;
+    case 'WTHR': view.innerHTML=panel("WTHR","grain belt forecast",{cls:"off",tx:"\u2026"},'c12',
+      `<span id="wx-badge" style="display:none"></span>`+wxLoading()); mountWxBadge(); loadWeather(); break;
+    case 'COT': view.innerHTML=panel("COT","commitments of traders",{cls:"sample",tx:"\u2026"},'c12',
+      `<div id="cot-mount" class="empty">loading positioning\u2026</div>`); mountCOT(); break;
+    case 'SEAS': view.innerHTML=panel("SEAS","seasonal tendencies",{cls:"",tx:""},'c12',
+      `<div class="secnote">Tendencies from historical patterns \u2014 context, not signals. Always confirm against this year's balance sheet.</div>`+
+      `<ul class="lst">`+SEAS.map(s=>`<li><span class="tag">${s.c.split(' ')[0]}</span><span class="tx">${s.t}</span></li>`).join('')+`</ul>`); break;
+    case 'WASDE': case 'REPORTS': view.innerHTML=panel("WASDE","USDA report calendar",{cls:"",tx:""},'c12',reportListFull()); break;
+    case 'CALC': view.innerHTML=calcView(); ['ca-acct','ca-risk','ca-inst','ca-entry','ca-stop','ca-tgt']
+      .forEach(id=>document.getElementById(id).addEventListener('input',runCalc)); runCalc(); break;
+    case 'NEWS': view.innerHTML=newsView(); loadNews(); break;
+    case 'NOTE': case 'NOTES': view.innerHTML=notesView(); wireNotes(); break;
+    case 'KEYS': view.innerHTML=keysView(); break;
+    case 'HELP': case 'H': case '?': view.innerHTML=helpView(); break;
+    case 'CLR': case 'CLEAR': view.innerHTML=`<div class="empty c12">cleared. type <span class="kbd">DASH</span> for the board.</div>`; break;
+    default: view.innerHTML=`<div class="empty c12">unknown code <b style="color:var(--amber)">${code}</b> \u2014 type <span class="kbd">HELP</span> for the list.</div>`;
+  }
+}
+function mountWxBadge(){
+  const b=document.getElementById('wx-badge'); if(!b) return;
+  const ph=b.closest('.panel').querySelector('.ph .badge'); // existing placeholder
+  if(ph){ph.id="wx-badge";}
+}
+async function mountCOT(){
+  const m=document.getElementById('cot-mount'); if(!m) return;
+  const live=await tryCOTLive();
+  const rows=live||COT_SAMPLE;
+  const {html,badge}=renderCOT(rows,!!live);
+  m.outerHTML=`<div>${html}</div>`;
+  // update header badge if present
+  const panelEl=[...document.querySelectorAll('.panel')].find(p=>p.querySelector('.code')?.textContent==='COT');
+  if(panelEl){const bdg=panelEl.querySelector('.badge'); if(bdg){bdg.className="badge "+(live?'live':'sample'); bdg.textContent=live?'LIVE':'SAMPLE';}}
+}
+function reportListMini(){
+  return `<ul class="lst">`+REPORTS.slice(0,4).map(r=>
+    `<li><span class="tag ${r.cls}">${r.tag}</span><span class="tx">${r.t}</span><span class="dt">${r.d}</span></li>`).join('')+`</ul>`;
+}
+function reportListFull(){
+  return `<ul class="lst">`+REPORTS.map(r=>
+    `<li><span class="tag ${r.cls}">${r.tag}</span><span class="tx">${r.t}<br><span style="color:var(--dim);font-size:11px">${r.n}</span></span><span class="dt">${r.d}</span></li>`).join('')+`</ul>`+
+    `<div class="hint">Verify exact release dates on usda.gov before trading around them. Times in US Central.</div>`;
+}
+function newsView(){
+  const src=[
+    ["USDA News","https://www.usda.gov/media/press-releases","official reports & releases"],
+    ["USDA FAS Export Sales","https://apps.fas.usda.gov/export-sales/","weekly export sales data"],
+    ["CFTC COT","https://www.cftc.gov/MarketReports/CommitmentsofTraders/","positioning, source data"],
+    ["NOAA CPC","https://www.cpc.ncep.noaa.gov/","drought & precip outlooks"],
+    ["CME Group Ag","https://www.cmegroup.com/markets/agriculture.html","contract specs & quotes"],
+    ["Drought Monitor","https://droughtmonitor.unl.edu/","US drought map, updated weekly"],
+  ];
+  return panel("NEWS","headlines & sources",{cls:"off",tx:"\u2026"},'c12',
+    `<div id="news-mount" class="empty">loading headlines\u2026</div>
+     <div class="ph" style="background:transparent;border:none;padding:10px 0 4px"><span class="ttl">FREE SOURCES</span></div>
+     <ul class="lst">`+src.map(s=>`<li><span class="tag cy">SRC</span><span class="tx"><a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a> <span style="color:var(--dim)">\u2014 ${s[2]}</span></span></li>`).join('')+`</ul>`);
+}
+async function loadNews(){
+  const m=document.getElementById('news-mount'); if(!m) return;
+  try{
+    const r=await fetch('/api/news'); if(!r.ok) throw 0; const items=await r.json();
+    if(!items.length) throw 0;
+    m.outerHTML=`<ul class="lst">`+items.slice(0,12).map(it=>
+      `<li><span class="tag gr">${it.src||'NEWS'}</span><span class="tx"><a href="${it.link}" target="_blank" rel="noopener">${it.title}</a></span><span class="dt">${it.date||''}</span></li>`).join('')+`</ul>`;
+    const p=[...document.querySelectorAll('.panel')].find(x=>x.querySelector('.code')?.textContent==='NEWS');
+    const bdg=p&&p.querySelector('.badge'); if(bdg){bdg.className="badge live";bdg.textContent="LIVE";}
+  }catch(e){
+    m.outerHTML=`<div class="secnote">Live headline feed unreachable right now \u2014 use the sources below. (Check the server has internet + the RSS hosts are up.)</div>`;
+  }
+}
+function helpView(){
+  return panel("HELP","function codes",{cls:"",tx:""},'c12',
+    `<dl class="help">
+      <dt>DASH</dt><dd>Default board: prices, live weather, COT, next reports.</dd>
+      <dt>WATCH</dt><dd>Full grain board with contract tick values.</dd>
+      <dt>WTHR</dt><dd>Live grain-belt forecast (Open-Meteo, no key).</dd>
+      <dt>COT</dt><dd>Managed-money positioning, attempts live CFTC data.</dd>
+      <dt>SEAS</dt><dd>Seasonal tendencies for corn / beans / wheat.</dd>
+      <dt>WASDE</dt><dd>USDA report calendar and what each one moves.</dd>
+      <dt>CALC</dt><dd>Position sizer + R:R with correct CME specs.</dd>
+      <dt>NEWS</dt><dd>Curated free data & intelligence sources.</dd>
+      <dt>NOTE</dt><dd>Trade journal, saved to this terminal.</dd>
+      <dt>KEYS</dt><dd>Connect a price feed; see what each data source costs.</dd>
+      <dt>CLR</dt><dd>Clear the screen.</dd>
+    </dl>
+    <div class="hint">Tip: <span class="kbd">\u2191</span>/<span class="kbd">\u2193</span> scroll your command history. Click the buttons under the command line too.</div>`);
+}
+
+/* ============================================================
+   COMMAND BAR WIRING
+   ============================================================ */
+const fnrow=document.getElementById('fnrow');
+FNS.forEach(([c,label])=>{
+  const b=document.createElement('button');
+  b.className="fn"; b.dataset.c=c; b.textContent=c; b.title=label;
+  b.onclick=()=>{document.getElementById('cmd').value="";render(c);};
+  fnrow.appendChild(b);
+});
+const cmd=document.getElementById('cmd');
+cmd.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ const v=cmd.value.trim(); if(v){cmdHist.unshift(v);histIdx=-1;} render(v); cmd.value=""; }
+  else if(e.key==='ArrowUp'){ if(histIdx<cmdHist.length-1){histIdx++;cmd.value=cmdHist[histIdx];} e.preventDefault(); }
+  else if(e.key==='ArrowDown'){ if(histIdx>0){histIdx--;cmd.value=cmdHist[histIdx];} else {histIdx=-1;cmd.value="";} e.preventDefault(); }
+});
+
+/* ---------- ticker tape ---------- */
+function buildTape(){
+  const items=[];
+  WATCH.forEach(w=>{const cl=w.chg>0?'up':w.chg<0?'down':'flat';const a=w.chg>0?'+':'';
+    items.push(`<span><b>${w.s}</b> ${fmt(w.last)} <span class="${cl}">${a}${fmt(w.chg)}</span></span>`);});
+  items.push(`<span style="color:var(--amber)">\u25b2 ACREAGE + GRAIN STOCKS ~JUN 30, 11:00 CT \u2014 TOP-TIER MOVER</span>`);
+  items.push(`<span style="color:var(--cyan)">GRAINDESK \u00b7 your desk, your rules</span>`);
+  document.getElementById('tape').innerHTML=items.join('')+items.join('');
+}
+buildTape();
+
+/* ---------- boot ---------- */
+(async function boot(){
+  const n=await sget('notes'); if(n)state.notesSaved=n;
+  render('DASH');
+})();
+</script>
+</body>
+</html>
