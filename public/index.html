@@ -9,14 +9,20 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#080B0C; --panel:#0F1416; --panel2:#131A1D; --line:#1E2A2E;
-    --amber:#FFB000; --amber-dim:#7A5A12; --green:#35D07F; --red:#FF5C5C;
-    --text:#C9D4D6; --dim:#5A6A6E; --cyan:#38BDD9;
+    /* J.A.R.V.I.S. holographic HUD palette (Stark Industries) */
+    --bg:#03070D; --panel:#071521; --panel2:#0A1E2E; --line:#11425F;
+    --amber:#42D4FF; --amber-dim:#1A5E7E; --green:#35D07F; --red:#FF5C5C;
+    --text:#CDE7F5; --dim:#5E8197; --cyan:#7FE7FF;
+    --glow:0 0 8px rgba(66,212,255,.55);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    background:var(--bg); color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 50% -10%, rgba(31,120,170,.18), transparent 60%),
+      radial-gradient(900px 600px at 90% 110%, rgba(20,90,140,.14), transparent 60%),
+      var(--bg);
+    color:var(--text);
     font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.45;
     display:flex; flex-direction:column; min-height:100vh;
     -webkit-font-smoothing:antialiased;
@@ -182,14 +188,60 @@
   @media(prefers-reduced-motion:reduce){.tape-inner{animation:none;padding-left:0}}
 
   .empty{color:var(--dim);text-align:center;padding:30px;font-size:12px}
-  .secnote{font-size:11px;color:var(--amber);background:#181208;border:1px solid #3a2f12;
+  .secnote{font-size:11px;color:var(--amber);background:rgba(20,70,100,.18);border:1px solid var(--amber-dim);
     padding:8px 10px;border-radius:3px;margin-bottom:12px}
+
+  /* ---------- J.A.R.V.I.S. HUD glow accents ---------- */
+  .brand{text-shadow:var(--glow)}
+  #cmd{text-shadow:0 0 6px rgba(66,212,255,.4)}
+  .cmdline .pmt{text-shadow:var(--glow)}
+  .ph .code{text-shadow:0 0 6px rgba(66,212,255,.45)}
+  .fn.active{box-shadow:var(--glow)}
+  .panel{box-shadow:inset 0 0 0 1px rgba(66,212,255,.04), 0 0 18px rgba(8,30,46,.5)}
+  .dot.live{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  .badge.live{color:var(--amber);border:1px solid var(--amber-dim);background:rgba(20,70,100,.18);box-shadow:var(--glow)}
+
+  /* ---------- J.A.R.V.I.S. assistant panel ---------- */
+  .jarvis{display:flex;flex-direction:column;gap:12px;min-height:420px}
+  .jv-head{display:flex;align-items:center;gap:14px}
+  .reactor{
+    width:54px;height:54px;border-radius:50%;flex:none;position:relative;
+    background:radial-gradient(circle at 50% 50%, #dff6ff 0 14%, #54d8ff 22%, #1486c0 42%, #06283b 70%);
+    box-shadow:0 0 18px rgba(66,212,255,.8), inset 0 0 10px rgba(255,255,255,.5);
+    animation:reactor 3.2s ease-in-out infinite;
+  }
+  .reactor::after{content:"";position:absolute;inset:6px;border-radius:50%;
+    border:2px solid rgba(220,246,255,.7);box-shadow:inset 0 0 8px rgba(66,212,255,.7)}
+  @keyframes reactor{0%,100%{box-shadow:0 0 16px rgba(66,212,255,.7),inset 0 0 10px rgba(255,255,255,.5)}
+    50%{box-shadow:0 0 26px rgba(66,212,255,1),inset 0 0 14px rgba(255,255,255,.7)}}
+  @media(prefers-reduced-motion:reduce){.reactor{animation:none}}
+  .jv-head .ttl2{font-size:12px;color:var(--text)}
+  .jv-head .ttl2 b{color:var(--amber);text-shadow:var(--glow);letter-spacing:1px}
+  .jv-head .ttl2 span{color:var(--dim)}
+  .jv-log{flex:1;min-height:260px;max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:10px;
+    padding:12px;background:rgba(5,18,28,.6);border:1px solid var(--line);border-radius:4px}
+  .jv-msg{max-width:80%;padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
+  .jv-msg.user{align-self:flex-end;background:rgba(66,212,255,.12);border:1px solid var(--amber-dim);color:var(--text)}
+  .jv-msg.ai{align-self:flex-start;background:rgba(10,30,46,.85);border:1px solid var(--line);color:var(--text)}
+  .jv-msg.ai .who{display:block;font-size:9px;color:var(--amber);letter-spacing:1.5px;margin-bottom:3px;text-shadow:var(--glow)}
+  .jv-msg.thinking .tx{color:var(--dim)}
+  .jv-msg.thinking .tx::after{content:"";animation:dots 1.2s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+  .jv-input{display:flex;gap:8px}
+  #jv-cmd{flex:1;background:#06121c;border:1px solid var(--line);color:var(--text);font-family:inherit;
+    font-size:13px;padding:9px 11px;border-radius:4px;outline:none}
+  #jv-cmd:focus{border-color:var(--amber-dim);box-shadow:var(--glow)}
+  .jv-note{font-size:10px;color:var(--dim)}
+  .jv-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .jv-chip{font-size:10px;color:var(--amber);border:1px solid var(--amber-dim);background:rgba(20,70,100,.18);
+    padding:3px 8px;border-radius:12px;cursor:pointer}
+  .jv-chip:hover{box-shadow:var(--glow)}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="brand">GRAINDESK <span class="who">// DARCY</span></div>
+  <div class="brand">GRAINDESK <span class="who">// J.A.R.V.I.S.</span></div>
   <div class="clocks">
     <span class="clk"><b>BNE</b> <span class="v" id="clk-bne">--:--</span></span>
     <span class="clk"><b>CHI</b> <span class="v" id="clk-chi">--:--</span></span>
@@ -268,7 +320,7 @@ const REPORTS = [
 
 /* ---------- function codes ---------- */
 const FNS = [
-  ["DASH","overview"],["WATCH","prices"],["COT","positioning"],["WTHR","grain belt wx"],
+  ["DASH","overview"],["JARVIS","ai core"],["WATCH","prices"],["COT","positioning"],["WTHR","grain belt wx"],
   ["SEAS","seasonality"],["WASDE","report calendar"],["CALC","position sizer"],
   ["NEWS","sources"],["NOTE","scratchpad"],["KEYS","data feeds"],["HELP","commands"]
 ];
@@ -276,6 +328,7 @@ const FNS = [
 /* ---------- state ---------- */
 let state = { live:false, notesSaved:"", priceKey:"" };
 let cmdHist = []; let histIdx = -1;
+let jarvisMsgs = [];  // J.A.R.V.I.S. conversation history (in-memory)
 
 /* ---------- storage (persists to backend JSON file) ---------- */
 async function sget(k){ try{ const r=await fetch('/api/kv?key='+encodeURIComponent(k)); if(!r.ok)return null; const j=await r.json(); return j.value??null; }catch(e){ return null; } }
@@ -471,6 +524,77 @@ function runCalc(){
     ${contracts===0?'<div class="secnote" style="margin-top:12px">Stop too wide for this account/risk \u2014 even 1 contract exceeds your budget. Widen account, tighten stop, or use a mini (XC/XW/XK).</div>':''}`;
 }
 
+/* ---------- J.A.R.V.I.S. (Claude-wired assistant) ---------- */
+const JARVIS_GREETING = "Good evening, sir. J.A.R.V.I.S. online. I have the weather, COT positioning, the position sizer and the report calendar at hand — ask me anything about the desk.";
+const JARVIS_PROMPTS = [
+  "Size a long ZC trade: $10k account, 1% risk, entry 421, stop 413.",
+  "Managed money is net short wheat — what should I watch?",
+  "What’s the seasonal tendency for soybeans into July?",
+  "What moves on the Acreage + Grain Stocks report?",
+];
+function jarvisView(){
+  return panel("J.A.R.V.I.S.","stark industries reasoning core",{cls:"live",tx:"● ONLINE"},'c12',
+    `<div class="jarvis">
+      <div class="jv-head">
+        <div class="reactor"></div>
+        <div class="ttl2"><b>J.A.R.V.I.S.</b> · <span>just a rather very intelligent system</span><br>
+          <span>grain-desk co-pilot — wired to Claude server-side</span></div>
+      </div>
+      <div id="jv-log" class="jv-log"></div>
+      <div class="jv-input">
+        <input id="jv-cmd" autocomplete="off" spellcheck="false" placeholder="Ask J.A.R.V.I.S. about the desk, sir…">
+        <button class="btn" id="jv-send">SEND</button>
+      </div>
+      <div class="jv-chips" id="jv-chips"></div>
+      <div class="jv-note">Runs on <b>claude-opus-4-8</b>. Your key stays server-side (set <b>ANTHROPIC_API_KEY</b> in <b>.env</b>) — it never reaches the browser. Context, not financial advice.</div>
+    </div>`);
+}
+function jvAppend(who, text){
+  const log=document.getElementById('jv-log'); if(!log) return null;
+  const el=document.createElement('div'); el.className='jv-msg '+(who==='user'?'user':'ai');
+  el.innerHTML=(who==='user'?'':'<span class="who">J.A.R.V.I.S.</span>')+'<span class="tx"></span>';
+  el.querySelector('.tx').textContent=text;
+  log.appendChild(el); log.scrollTop=log.scrollHeight; return el;
+}
+function jvContext(){
+  const board=WATCH.map(w=>`${w.s} (${w.d}) ${fmt(w.last)} ${w.chg>=0?'+':''}${fmt(w.chg)}`).join('; ');
+  const live=state.live?'live weather feed connected':'weather feed not yet loaded';
+  return `WATCH board [${state.live?'LIVE':'SAMPLE'} prices]: ${board}. Status: ${live}. `+
+    `Next major USDA event: Acreage + Grain Stocks, ~Jun 30 11:00 CT.`;
+}
+async function jarvisSend(){
+  const inp=document.getElementById('jv-cmd'); if(!inp) return;
+  const text=inp.value.trim(); if(!text) return;
+  inp.value='';
+  jvAppend('user',text); jarvisMsgs.push({role:'user',content:text});
+  const bubble=jvAppend('ai',''); bubble.classList.add('thinking');
+  try{
+    const r=await fetch('/api/jarvis',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:jarvisMsgs.slice(-20),context:jvContext()})});
+    const j=await r.json();
+    const reply=j.reply||'(no response)';
+    bubble.classList.remove('thinking'); bubble.querySelector('.tx').textContent=reply;
+    if(j.ok!==false) jarvisMsgs.push({role:'assistant',content:reply});
+  }catch(e){
+    bubble.classList.remove('thinking');
+    bubble.querySelector('.tx').textContent="My apologies, sir — I couldn't reach the reasoning core just now.";
+  }
+  const log=document.getElementById('jv-log'); if(log) log.scrollTop=log.scrollHeight;
+}
+function wireJarvis(){
+  jvAppend('ai',JARVIS_GREETING);
+  jarvisMsgs.forEach(m=>jvAppend(m.role==='assistant'?'ai':'user',m.content));
+  const chips=document.getElementById('jv-chips');
+  JARVIS_PROMPTS.forEach(p=>{
+    const c=document.createElement('span'); c.className='jv-chip'; c.textContent=p;
+    c.onclick=()=>{document.getElementById('jv-cmd').value=p; jarvisSend();};
+    chips.appendChild(c);
+  });
+  document.getElementById('jv-send').onclick=jarvisSend;
+  document.getElementById('jv-cmd').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault(); jarvisSend();} });
+  document.getElementById('jv-cmd').focus();
+}
+
 /* ---------- KEYS ---------- */
 function keysView(){
   return panel("KEYS","data feeds & cost","",'c12',`
@@ -537,6 +661,7 @@ async function render(codeRaw){
     case 'CALC': view.innerHTML=calcView(); ['ca-acct','ca-risk','ca-inst','ca-entry','ca-stop','ca-tgt']
       .forEach(id=>document.getElementById(id).addEventListener('input',runCalc)); runCalc(); break;
     case 'NEWS': view.innerHTML=newsView(); loadNews(); break;
+    case 'JARVIS': case 'J': case 'AI': view.innerHTML=jarvisView(); wireJarvis(); break;
     case 'NOTE': case 'NOTES': view.innerHTML=notesView(); wireNotes(); break;
     case 'KEYS': view.innerHTML=keysView(); break;
     case 'HELP': case 'H': case '?': view.innerHTML=helpView(); break;
@@ -651,6 +776,7 @@ function helpView(){
   return panel("HELP","function codes",{cls:"",tx:""},'c12',
     `<dl class="help">
       <dt>DASH</dt><dd>Default board: prices, live weather, COT, next reports.</dd>
+      <dt>JARVIS</dt><dd>AI co-pilot (Claude) — ask about sizing, COT, weather, reports.</dd>
       <dt>WATCH</dt><dd>Full grain board with contract tick values.</dd>
       <dt>WTHR</dt><dd>Live grain-belt forecast (Open-Meteo, no key).</dd>
       <dt>COT</dt><dd>Managed-money positioning, attempts live CFTC data.</dd>

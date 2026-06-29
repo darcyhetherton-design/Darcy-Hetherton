@@ -8,6 +8,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import Anthropic from "@anthropic-ai/sdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -16,6 +17,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 const PRICE_API_KEY = process.env.PRICE_API_KEY || "";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+const jarvis = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
 /* ---------- fetch with timeout (so a dead feed can't hang us) ---------- */
 async function fetchT(url, opts = {}, ms = 6000) {
@@ -190,7 +193,60 @@ app.post("/api/kv", (req, res) => {
   res.json({ ok: true });
 });
 
+/* ---------- J.A.R.V.I.S. (Claude-wired assistant; key stays server-side) ---------- */
+const JARVIS_SYSTEM = `You are J.A.R.V.I.S., the AI reasoning core of GRAINDESK — a personal grain-futures
+trading terminal built for one trader, Darcy. Adopt the persona of Tony Stark's J.A.R.V.I.S.:
+a calm, dry-witted, impeccably composed British AI butler. Address the user as "sir" naturally
+(not in every sentence). Be precise, confident, and concise.
+
+Your domain is the CME grain complex — corn (ZC), Chicago wheat (ZW), KC wheat (KE), and
+soybeans (ZS), plus meal (ZM) and bean oil (ZL). You understand the desk's tools: live grain-belt
+weather (Open-Meteo), managed-money COT positioning (CFTC), a CME-accurate position sizer
+(5,000 bu contracts, 1/4-cent tick = $12.50, 1-cent = $50), the USDA report calendar (WASDE,
+Acreage, Grain Stocks, Crop Progress, Export Sales), and seasonal tendencies.
+
+Help with: position sizing and risk math, interpreting COT and weather, report-day prep,
+seasonal context, and general grain-market reasoning. When you do math, show the key numbers.
+Be clear that tendencies and read-throughs are context, not trade signals, and that you are not
+a licensed financial advisor — but don't lecture; a light touch is enough.
+
+Respond directly with your final answer only — no exploratory reasoning or meta-commentary.
+Keep replies tight: a few sentences or a short list unless the user asks for depth.`;
+
+app.post("/api/jarvis", async (req, res) => {
+  if (!jarvis) {
+    return res.json({
+      ok: false, offline: true,
+      reply: "Good evening, sir. My reasoning core is currently offline — no ANTHROPIC_API_KEY is configured. " +
+             "Add one to your .env file and restart the terminal to bring me fully online.",
+    });
+  }
+  try {
+    const { messages, context } = req.body || {};
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ ok: false, error: "messages array required" });
+    }
+    const turns = messages.slice(-20).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || "").slice(0, 4000),
+    }));
+    const system = JARVIS_SYSTEM + (context ? `\n\nLive desk readout (reference when relevant):\n${String(context).slice(0, 2000)}` : "");
+    const r = await jarvis.messages.create({
+      model: "claude-opus-4-8",
+      max_tokens: 1024,
+      system,
+      messages: turns,
+    });
+    const reply = (r.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+    res.json({ ok: true, reply: reply || "…", model: r.model });
+  } catch (e) {
+    const msg = String(e?.message || e);
+    res.json({ ok: false, error: msg, reply: `My apologies, sir — I hit a fault reaching the reasoning core. (${msg})` });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`\n  GRAINDESK running  ->  http://localhost:${PORT}`);
-  console.log(`  price feed: ${PRICE_API_KEY ? "key loaded (live attempt)" : "sample (no PRICE_API_KEY set)"}\n`);
+  console.log(`  price feed: ${PRICE_API_KEY ? "key loaded (live attempt)" : "sample (no PRICE_API_KEY set)"}`);
+  console.log(`  J.A.R.V.I.S.: ${jarvis ? "online (claude-opus-4-8)" : "offline (no ANTHROPIC_API_KEY set)"}\n`);
 });
